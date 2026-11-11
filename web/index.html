@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ee">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/style.css?v=3">
+  <title>Теплица № 08</title>
+  <script src="/static/app.js?v=3" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">К содержанию</a>
+  <header class="top">
+    <div class="shell top-inner">
+      <div class="brand">
+        <span>Практическая № 8 <small>STM32L031K6 · USART</small></span>
+      </div>
+      <div class="connection" id="connection" data-state="waiting" role="status">Подключение к серверу</div>
+    </div>
+  </header>
+  <main class="shell" id="main">
+    <section class="intro" aria-labelledby="title">
+      <div>
+        <h1 id="title">Как работает теплица</h1>
+        <p class="intro-guide">Представь, что в теплице стало жарко. Посмотри, как датчик, две платы и форточка работают вместе.</p>
+        <button type="button" id="start-demo" disabled>Показать на примере жары</button>
+      </div>
+      <div class="mode" id="mode">
+        <span id="mode-label">Режим работы</span>
+        <strong id="mode-detail">Ожидаем данные</strong>
+      </div>
+    </section>
+
+    <section class="scenarios" aria-labelledby="scenario-heading">
+      <h2 id="scenario-heading">Запустить опыт</h2>
+      <div class="scenario-buttons" id="scenarios">
+        <button type="button" data-scenario="normal" aria-pressed="false" disabled>Сброс</button>
+        <button type="button" data-scenario="heat" aria-pressed="false" disabled>Жара</button>
+        <button type="button" data-scenario="sun" aria-pressed="false" disabled>Яркое солнце</button>
+        <button type="button" data-scenario="dry" aria-pressed="false" disabled>Сухой грунт</button>
+        <button type="button" data-scenario="empty" aria-pressed="false" disabled>Пустой бак</button>
+        <button type="button" data-scenario="morning" aria-pressed="false" disabled>Холодное утро</button>
+        <button type="button" data-scenario="fault" aria-pressed="false" disabled>Сбой датчика</button>
+        <button type="button" data-scenario="invalid" aria-pressed="false" disabled>Ошибочный угол</button>
+      </div>
+      <p id="scenario-error" role="alert" hidden></p>
+    </section>
+
+    <section class="experiment" aria-labelledby="experiment-title">
+      <header class="experiment-head">
+        <h2 id="experiment-title">Ход опыта</h2>
+        <span id="experiment-status" data-phase="idle" role="status">Ожидание</span>
+      </header>
+      <ol class="experiment-steps">
+        <li data-step="input" data-state="waiting"><strong>1. Показания</strong><span class="step-context" hidden></span><code class="step-value">—</code></li>
+        <li data-step="command" data-state="waiting"><strong>2. Решение МК 1</strong><span class="step-context" hidden></span><code class="step-value">—</code></li>
+        <li data-step="response" data-state="waiting"><strong>3. Исполнение</strong><span class="step-context" hidden></span><code class="step-value">—</code></li>
+        <li data-step="result" data-state="waiting"><strong>4. Результат</strong><span class="step-value">—</span></li>
+      </ol>
+      <p class="experiment-note" id="experiment-note">Выберите опыт. Здесь появятся кадры обмена и измеренный результат.</p>
+    </section>
+
+    <div class="primary">
+      <section class="scene panel" aria-labelledby="scene-heading">
+        <header class="section-head">
+          <div><h2 id="scene-heading">Схема стенда</h2></div>
+          <div class="scene-tools">
+            <span class="scene-label" id="scene-health" data-state="waiting">Ожидание</span>
+            <button type="button" id="view-toggle" aria-pressed="true" aria-controls="greenhouse">Объём</button>
+          </div>
+        </header>
+        <svg class="greenhouse" id="greenhouse" data-view="depth" viewBox="0 0 770 502" aria-labelledby="drawing-title drawing-desc">
+          <title id="drawing-title">Интерактивная схема теплицы</title>
+          <desc id="drawing-desc">Семь датчиков. Под теплицей слева находится МК 1, справа МК 2. Между платами проходит линия USART.</desc>
+          <defs>
+            <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0v28" fill="none" stroke="#35493e" stroke-width="1"/></pattern>
+            <pattern id="shade-hatch" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 1h7M1 0v7" stroke="#c1b582" stroke-width=".6"/></pattern>
+            <pattern id="soil-hatch" width="13" height="13" patternUnits="userSpaceOnUse"><path d="M2 2h3m4 6h3M3 11h1" stroke="#7c6850" stroke-width="1"/></pattern>
+            <clipPath id="tank-clip"><rect x="583" y="249" width="63" height="72" rx="10"/></clipPath>
+            <g id="plant">
+              <path d="M0 4v-44m0 26-10-8m10-6 9-9" fill="none" stroke="#95c682" stroke-width="2" stroke-linecap="round"/>
+              <path d="M0-25C-3-39-16-43-23-38c4 11 10 17 23 13M0-31c5-16 15-19 23-15-2 11-9 18-23 15M0-13c-5-11-14-13-20-8 4 9 10 12 20 8M0-18c4-9 14-12 20-8-4 8-10 12-20 8" fill="#659968" stroke="#a6c892" stroke-width="1"/>
+            </g>
+            <g id="chip-symbol">
+              <rect x="-17" y="-17" width="34" height="34" rx="4"/>
+              <rect x="-7" y="-7" width="14" height="14" rx="2"/>
+              <path d="M-10-17v-5m10 5v-5m10 5v-5m-20 39v5m10-5v5m10-5v5M-17-10h-5m5 10h-5m5 10h-5m39-20h5m-5 10h5m-5 10h5"/>
+            </g>
+          </defs>
+          <path fill="url(#grid)" d="M0 0h770v502H0z"/>
+          <g class="blueprint-text" aria-hidden="true"><text x="22" y="28">A–A / СЕЧЕНИЕ</text><text x="748" y="486" text-anchor="end">СХЕМА УСЛОВНАЯ</text></g>
+          <path d="M54 352h656M78 358h610" stroke="#5c7663" stroke-width="1" stroke-dasharray="3 5"/>
+          <g class="scene-depth" aria-hidden="true">
+            <path d="M118 352h493l66-38H184Z" fill="#86a595" opacity=".16"/>
+            <path d="M118 189 365 50 431 12 184 151Z" fill="#acccba" opacity=".19"/>
+            <path d="M365 50 611 189 677 151 431 12Z" fill="#acccba" opacity=".27"/>
+            <path d="M611 189 677 151v163l-66 38Z" fill="#9ac5b0" opacity=".2"/>
+            <path d="M184 151 431 12l246 139v163l-66 38m0-163 66-38M365 50l66-38M184 151l-66 38m534 36 25-14m-33 121V172"
+              fill="none" stroke="#99beac" stroke-width="1.6" stroke-linejoin="round"/>
+          </g>
+          <path d="M145 337V195L365 70l220 125v142Z" fill="#2d4337" stroke="#75917b" stroke-width="2"/>
+          <path d="M145 195h440m-412-16L365 70l193 109m-358 16v142m110-142v142m110-142v142m110-142v142" stroke="#456151" fill="none" stroke-width="1"/>
+          <path d="M118 352V189L365 50l246 139v163" stroke="#b5c6ab" fill="none" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M118 189h493m-493 148h493m-246-287v145m-255-5h18m475 0h17" stroke="#829d83" stroke-width="1.5" fill="none"/>
+          <path d="M170 201v135m389-135v135" stroke="#829d83" stroke-width="1.5" stroke-dasharray="4 5"/>
+          <g id="vent-assembly">
+            <path d="M435 90l95 54" stroke="#23342b" stroke-width="8"/>
+            <path id="vent-panel" d="M435 90l95 54" stroke="#d8e9cb" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="435" cy="90" r="4.5" fill="#e4e7b4"/>
+            <g class="airflow" fill="none" stroke="#bddba6" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round">
+              <path d="M483 155q29-18 41-63m-8 5 8-5 4 9M510 174q31-10 50-52m-9 3 9-3 1 9"/>
+            </g>
+          </g>
+          <path d="M201 211h328" stroke="#d2c083" stroke-width="1" stroke-dasharray="3 5"/>
+          <g id="shade-fabric"><path d="M202 209h326v13H202z" fill="url(#shade-hatch)" stroke="#d2c083" stroke-width="1"/><path d="M528 206v19" stroke="#f2dfa0" stroke-width="3"/></g>
+          <circle cx="199" cy="215" r="7" fill="#4b4935" stroke="#e1cf94"/>
+          <g transform="translate(635 99)" fill="none" stroke="#ddc98f" stroke-width="1.5">
+            <circle r="18"/><path d="M-34 0h8m52 0h8M0-34v8m0 52v8m-25-59 6 6m38 38 6 6m0-50-6 6m-38 38-6 6"/>
+          </g>
+          <g aria-hidden="true">
+            <g class="scene-depth">
+              <path d="M201 306l25-14h340l-25 14Z" fill="#7e6a50" stroke="#ad9872"/>
+              <path d="M541 306l25-14-13 35-25 14Z" fill="#6d5942" stroke="#ad9872"/>
+              <path d="M583 258 597 249l52-1-13 10Z" fill="#648783" opacity=".85"/>
+            </g>
+            <path d="M201 306h340l-13 35H215z" fill="#564637" stroke="#a68f6a" stroke-width="1.5"/>
+            <path d="M201 306h340l-13 35H215z" fill="url(#soil-hatch)"/>
+            <path d="M201 306h340" stroke="#d4bd8e" stroke-width="2"/>
+            <use href="#plant" x="247" y="305"/><use href="#plant" x="309" y="305"/>
+            <use href="#plant" x="374" y="305"/><use href="#plant" x="440" y="305"/><use href="#plant" x="497" y="305"/>
+            <path id="irrigation-line" d="M613 315v17h-59v-36H209" stroke="#809d9b" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+            <g class="water-drops" fill="none" stroke="#9cdbdd" stroke-width="2" stroke-dasharray="2 3"><path d="M233 299v10m62-10v10m66-10v10m65-10v10m62-10v10"/></g>
+            <path d="M583 258q0-9 9-9h45q9 0 9 9v54q0 9-9 9h-45q-9 0-9-9z" fill="#314846" stroke="#96aeac" stroke-width="1.5"/>
+            <rect id="tank-water" x="583" y="321" width="63" height="0" fill="#75a9ab" clip-path="url(#tank-clip)"/>
+            <path d="M590 264h9m-9 13h5m-5 13h9m-9 13h5m16-60h17v6m-38 69v8m44-8v8" fill="none" stroke="#a4bfb9" stroke-width="1.25"/>
+          </g>
+          <g id="glass-drops" fill="#a9c9bd" aria-hidden="true">
+            <path d="M236 146q-5 8 0 9 5-1 0-9m32-16q-5 8 0 9 5-1 0-9m31-17q-5 8 0 9 5-1 0-9m-27 43q-5 8 0 9 5-1 0-9m53-48q-5 8 0 9 5-1 0-9m69 4q-5 8 0 9 5-1 0-9m25 20q-5 8 0 9 5-1 0-9m21 14q-5 8 0 9 5-1 0-9m17 21q-5 8 0 9 5-1 0-9"/>
+          </g>
+          <g class="device-wiring" aria-hidden="true">
+            <path class="sensor-wire" d="M119 406v-23h73v-39"/>
+            <path class="actuator-wire" d="M650 406v-23h40v-53h-34"/>
+            <path class="serial-wire" d="M266 434h238"/>
+            <text x="385" y="421" text-anchor="middle">USART ↔</text>
+            <circle id="serial-packet" cx="266" cy="434" r="5"/>
+          </g>
+          <g class="board-node" data-device="controller" role="button" tabindex="0" aria-pressed="false" aria-label="МК 1. STM32L031K6. Датчики и автоматика">
+            <rect class="board-outline" x="35" y="399" width="231" height="70" rx="8"/>
+            <use class="chip-icon" href="#chip-symbol" x="70" y="434"/>
+            <text class="board-title" x="103" y="430">МК 1<tspan class="board-model"> · STM32</tspan></text>
+            <text class="board-subtitle" x="103" y="449">Датчики и автоматика</text>
+            <circle class="board-led" cx="250" cy="414" r="4"/>
+          </g>
+          <g class="board-node" data-device="actuator" role="button" tabindex="0" aria-pressed="false" aria-label="МК 2. STM32L031K6. Управление приводами">
+            <rect class="board-outline" x="504" y="399" width="231" height="70" rx="8"/>
+            <use class="chip-icon" href="#chip-symbol" x="539" y="434"/>
+            <text class="board-title" x="572" y="430">МК 2<tspan class="board-model"> · STM32</tspan></text>
+            <text class="board-subtitle" x="572" y="449">Управление приводами</text>
+            <circle class="board-led" cx="719" cy="414" r="4"/>
+          </g>
+          <g class="actuator-hotspots" aria-hidden="true">
+            <path data-device="vent" d="M438 91l92 53"/>
+            <path data-device="shade" d="M200 211h330"/>
+            <circle data-device="pump" cx="555" cy="331" r="9"/>
+          </g>
+          <g class="markers" id="scene-markers"></g>
+          <g class="blueprint-text" aria-hidden="true"><text x="119" y="373">КАРКАС</text><text x="364" y="373" text-anchor="middle">ГРЯДКА · КАПЕЛЬНАЯ ЛИНИЯ</text><text x="616" y="373" text-anchor="middle">БАК</text></g>
+        </svg>
+        <div class="actuators" aria-label="Состояние приводов">
+          <button type="button" data-device="vent" aria-pressed="false"><span>Форточка</span><strong id="vent-value">—</strong></button>
+          <button type="button" data-device="shade" aria-pressed="false"><span>Штора</span><strong id="shade-value">—</strong></button>
+          <button type="button" data-device="pump" aria-pressed="false"><span>Капельный полив</span><strong id="pump-value">—</strong></button>
+        </div>
+        <div class="device-detail">
+          <div aria-live="polite">
+            <p class="eyebrow" id="device-title">ОБМЕН ПО USART</p>
+            <p id="device-description">Выберите плату или привод, чтобы посмотреть его роль.</p>
+          </div>
+          <p class="device-live" id="device-live" hidden></p>
+        </div>
+      </section>
+
+      <section class="sensors panel" aria-labelledby="sensors-heading">
+        <header class="section-head"><div><h2 id="sensors-heading">Датчики</h2></div><span class="sensor-count">7 каналов</span></header>
+        <div id="sensor-list" class="sensor-list" role="group" aria-label="Выбрать датчик"></div>
+        <div class="sensor-detail" aria-live="polite" aria-atomic="true">
+          <p class="eyebrow" id="sensor-detail-label">ПРАВИЛО АВТОМАТИКИ</p>
+          <p id="sensor-detail"></p>
+        </div>
+      </section>
+    </div>
+
+    <div class="conditions" aria-label="Диагностика теплицы">
+      <section class="condition panel" id="condensation-status" data-state="waiting" aria-labelledby="condensation-title">
+        <span class="condition-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3c-2 5-6 7.8-6 12a6 6 0 0 0 12 0c0-4.2-4-7-6-12Z" stroke="currentColor" stroke-width="1.6"/></svg></span>
+        <div><h2 id="condensation-title">Конденсат</h2><p id="condensation-detail">Ожидаем показания</p></div>
+        <strong id="condensation-value">—</strong>
+      </section>
+      <section class="condition panel" id="irrigation-status" data-state="waiting" aria-labelledby="irrigation-title">
+        <span class="condition-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 8h18v11H3zM6 8V5h4v3m4 6h4m-2-2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div><h2 id="irrigation-title">Полив</h2><p id="irrigation-detail">Ожидаем показания</p></div>
+        <strong id="irrigation-value">—</strong>
+      </section>
+    </div>
+
+    <div class="secondary">
+      <section class="trend panel" aria-labelledby="trend-heading">
+        <header class="section-head"><div><h2 id="trend-heading">График показаний</h2></div><span class="chart-note" id="chart-note">До 60 секунд</span></header>
+        <div class="chart-frame">
+          <svg id="chart" viewBox="0 0 550 218" role="img" aria-label="Ожидаем показания выбранного датчика"></svg>
+          <div class="chart-empty" id="chart-empty">Ожидаем показания</div>
+        </div>
+        <div id="chart-legend" class="chart-legend"></div>
+      </section>
+      <section class="journal panel" aria-labelledby="journal-heading">
+        <header class="section-head"><div><h2 id="journal-heading">Журнал USART</h2><p class="eyebrow">115200 бод · 8N1</p></div>
+          <label class="filter"><input type="checkbox" id="command-filter"> Без показаний</label>
+        </header>
+        <div class="links" id="links"><span id="controller-link">МК 1 · ожидание</span><span id="actuator-link">МК 2 · ожидание</span></div>
+        <div class="log-wrap" tabindex="0" aria-label="Последние сообщения USART">
+          <table>
+            <thead><tr><th scope="col">Время</th><th scope="col">Маршрут</th><th scope="col">Сообщение</th></tr></thead>
+            <tbody id="journal-body"><tr><td colspan="3">Ожидаем обмен между платами</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="shell footer"><span>Практическая № 08 · Обмен по USART между двумя МК</span><span>Цифровые показания · Локальный стенд</span></footer>
+</body>
+</html>

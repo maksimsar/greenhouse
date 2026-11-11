@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "author": "Цифровая теплица — Практическая № 8",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-st-nucleo-l031k6", "id": "mcu", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-logic-analyzer", "id": "logic", "top": 10, "left": 260, "attrs": { "channelNames": "TX,RX,D2,D3,D4,D5,D6,D7" } },
+    { "type": "wokwi-text", "id": "title", "top": -95, "left": 0, "attrs": { "text": "МК №1 · Датчики и автоматика" } },
+    { "type": "wokwi-text", "id": "port", "top": -64, "left": 0, "attrs": { "text": "USART2 · 115200 8N1 · RFC2217 4001" } }
+  ],
+  "connections": [
+    ["mcu:VCP_TX", "$serialMonitor:RX", "", []],
+    ["$serialMonitor:TX", "mcu:VCP_RX", "", []],
+    ["mcu:VCP_TX", "logic:D0", "orange", []],
+    ["mcu:VCP_RX", "logic:D1", "blue", []],
+    ["mcu:GND.1", "logic:GND", "black", []]
+  ],
+  "serialMonitor": { "newline": "lf" }
+}

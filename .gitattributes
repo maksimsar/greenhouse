@@ -1,0 +1,3 @@
+# Keep the Intel HEX records and ELF images exactly as generated.
+firmware/*/build/*.hex binary
+firmware/*/build/*.elf binary
